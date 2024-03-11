@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            max-width: 1000px;
+            margin: 10px;
+            padding: 5px;
+        }
+        .left-panel {
+            flex-basis: 30%;
+            padding-right: 100px;
+        }
+        .right-panel {
+            flex-basis: 70%;
+            padding-left: 100px;
+        }
+        .input-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .message-input {
+            flex: 1;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .id-input {
+            width: 100px;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .send-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            margin: 5px;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .send-button:hover {
+            background-color: #0056b3;
+        }
+        .chat-list {
+            list-style: none;
+            padding: 0;
+        }
+        .chat-list-item {
+            cursor: pointer;
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: #f2f2f2;
+            border-radius: 5px;
+        }
+        .chat-list-item:hover {
+            background-color: #e0e0e0;
+        }
+        .message-container {
+            height: 800px;
+            width: 600px    ;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            margin-top: 20px    ;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f2f2f2;
+            border-radius: 10px;
+        }
+        .username {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .content {
+            font-size: 16px;
+        }
+        .my-message {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .other-message {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Левая панель -->
+    <div class="left-panel">
+        <h2>Create Chat</h2>
+        <div class="input-container">
+            <input type="text" id="chatNameInput" class="message-input" placeholder="Enter chat name">
+            <input type="text" id="chatIdInput" class="id-input" placeholder="Enter chat ID">
+            <button class="send-button" onclick="createChat()">Create Chat</button>
+            <button class="send-button" onclick="fetchAvailableChats()">Refresh Chats</button>
+        </div>
+        <h2>Available Chats</h2>
+        <ul class="chat-list" id="chatList">
+            <!-- Available chats will be listed here -->
+        </ul>
+    </div>
+
+    <!-- Правая панель -->
+    <div class="right-panel">
+        <div class="message-container" id="messageContainer">
+            <!-- Messages will be displayed here -->
+        </div>
+        <div class="input-container">
+            <input type="text" id="messageInput" class="message-input" placeholder="Type your message">
+            <button class="send-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var authToken = "";
+    var userId = "";
+    var username = "";
+
+    // Функция для выполнения входа при загрузке страницы
+    window.onload = function() {
+        var inputUsername = prompt("Enter your username:");
+        var inputPassword = prompt("Enter your password:");
+
+        // Проверка на наличие имени пользователя и пароля
+        if (inputUsername && inputPassword) {
+            // Отправка запроса на сервер для входа
+            fetch('http://localhost:4321/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: inputUsername, password: inputPassword })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to login');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Сохранение полученных данных
+                    authToken = data.token;
+                    userId = data.id;
+                    username = data.username;
+
+                    console.log('Login successful:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    };
+
+    function createChat() {
+        var chatNameInput = document.getElementById("chatNameInput");
+        var chatIdInput = document.getElementById("chatIdInput");
+        var chatName = chatNameInput.value.trim();
+        var chatId = chatIdInput.value.trim(); // Изменено на строку
+
+        if (chatName !== "" && chatId !== "") { // Проверка на пустую строку
+            fetch('http://localhost:4321/ws/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': authToken,
+                },
+                body: JSON.stringify({ id: chatId, name: chatName }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to create chat');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Chat created:', data);
+                    chatNameInput.value = "";
+                    chatIdInput.value = "";
+                    fetchAvailableChats();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    }
+    function fetchAvailableChats() {
+        fetch('http://localhost:4321/ws/rooms', {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authToken,
+            },
+        }).then(response => response.json())
+            .then(data => {
+                var chatList = document.getElementById("chatList");
+                chatList.innerHTML = ""; // Clear existing chat list
+                data.forEach(chat => {
+                    var listItem = document.createElement("li");
+                    listItem.textContent = `${chat.name} (ID: ${chat.id})`;
+                    listItem.classList.add("chat-list-item");
+                    listItem.setAttribute("data-roomid", chat.id);
+                    listItem.onclick = function() {
+                        joinChat(chat.id);
+                    };
+                    chatList.appendChild(listItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    var ws;
+
+
+    function joinChat(roomId) {
+
+        if (userId && username) {
+
+            ws = new WebSocket(`ws://localhost:4321/ws/join/${roomId}?clientid=${userId}&username=${username}`);
+
+
+            ws.onmessage = function(event) {
+
+                var messageContainer = document.getElementById("messageContainer");
+                addMessageToChat(JSON.parse(event.data), false);
+            };
+        }
+    }
+
+    function sendMessage() {
+        var messageInput = document.getElementById("messageInput");
+        var message = messageInput.value.trim();
+
+        if (message !== "") {
+            if (ws) {
+
+                ws.send(message);
+                console.log("Sending message:", message);
+                addMessageToChat({ username: "You", content: message }, true);
+                messageInput.value = ""; // Очищаем ввод сообщения после отправки
+            } else {
+                console.error("WebSocket connection is not established.");
+            }
+        }
+    }
+
+
+    function addMessageToChat(message, isMyMessage) {
+        var messageContainer = document.getElementById("messageContainer");
+        var messageElement = document.createElement("div");
+        messageElement.classList.add("message");
+
+        if (isMyMessage) {
+            messageElement.classList.add("my-message");
+        } else {
+            messageElement.classList.add("other-message");
+        }
+
+        var usernameElement = document.createElement("div");
+        usernameElement.classList.add("username");
+        usernameElement.textContent = message.username;
+
+        var contentElement = document.createElement("div");
+        contentElement.classList.add("content");
+        contentElement.textContent = message.content;
+
+        messageElement.appendChild(usernameElement);
+        messageElement.appendChild(contentElement);
+
+        messageContainer.appendChild(messageElement);
+    }
+
+    fetchAvailableChats();
+</script>
+</body>
+</html>
