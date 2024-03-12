@@ -5,6 +5,11 @@ import (
 	"log"
 )
 
+type Clienter interface {
+	Write()
+	Read(hug *Hub)
+}
+
 type Client struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`

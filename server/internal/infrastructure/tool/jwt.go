@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+type TokenManagerer interface {
+	Sign(id string, username string) (string, error)
+	Unsign(token string) (Claims, error)
+}
+
 type Claims struct {
 	ID       string `json:"id" `
 	Username string `json:"username"`

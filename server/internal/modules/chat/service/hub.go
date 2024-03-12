@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+type Huber interface {
+	Run()
+}
+
 type Room struct {
 	ID      string             `json:"id"`
 	Name    string             `json:"name"`

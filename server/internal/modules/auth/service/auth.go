@@ -10,6 +10,12 @@ import (
 	"server/internal/modules/auth/models"
 )
 
+type Auther interface {
+	Register(u models.User) error
+	Login(u models.User) (string, string, string, error)
+	Verify(t string) bool
+}
+
 type AuthService struct {
 	adapter *db.SqlAdapter
 	crypt   *tool.Bcrypt

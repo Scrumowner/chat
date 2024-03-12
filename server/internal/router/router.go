@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+type Routerer interface {
+	Route(router *gin.Engine)
+}
+
 type Router struct {
 	c *controller.ChatController
 }

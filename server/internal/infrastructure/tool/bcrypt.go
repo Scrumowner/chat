@@ -5,8 +5,8 @@ import (
 )
 
 type Crypter interface {
-	GeneratePassword(string) (string, error)
-	CompareHashWithPassowrd(string, string) bool
+	GeneratePassword(password string) (string, error)
+	CompareHashWithPassowrd(hash string, password string) bool
 }
 type Bcrypt struct {
 }
