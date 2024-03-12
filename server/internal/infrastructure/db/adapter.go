@@ -8,6 +8,10 @@ import (
 	"server/internal/modules/auth/models"
 )
 
+type SqlAdapterer interface {
+	Insert(models.Tabler) error
+	Select(models.Tabler, Condition, interface{}) error
+}
 type SqlAdapter struct {
 	sql *sqlx.DB
 	sq  squirrel.StatementBuilderType

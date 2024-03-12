@@ -4,6 +4,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type Crypter interface {
+	GeneratePassword(string) (string, error)
+	CompareHashWithPassowrd(string, string) bool
+}
 type Bcrypt struct {
 }
 

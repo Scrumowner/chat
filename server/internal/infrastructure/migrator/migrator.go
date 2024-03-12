@@ -8,6 +8,9 @@ import (
 	"server/internal/modules/auth/models"
 )
 
+type Migratorer interface {
+	Migrate(models.Tabler) error
+}
 type Migrator struct {
 	db *sqlx.DB
 }
